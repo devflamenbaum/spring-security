@@ -8,6 +8,8 @@ import com.codewithdevflamen.client.repository.VerificationTokenRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -46,5 +48,28 @@ public class UserServiceImpl implements UserService {
                 new VerificationToken(user, token);
 
         verificationTokenRepository.save(verificationToken);
+    }
+
+    @Override
+    public String validate(String token) {
+        VerificationToken verificationToken =
+                verificationTokenRepository.findByToken(token);
+
+        if(verificationToken == null) {
+            return "invalid token";
+        }
+
+        User user = verificationToken.getUser();
+        Calendar cal = Calendar.getInstance();
+
+        if((verificationToken.getExpirationDate().getTime() - cal.getTime().getTime()) <= 0){
+            verificationTokenRepository.delete(verificationToken);
+            return "Token has expired";
+        }
+
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        return "valid";
     }
 }

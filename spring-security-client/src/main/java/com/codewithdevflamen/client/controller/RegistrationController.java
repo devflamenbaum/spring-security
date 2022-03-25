@@ -6,10 +6,7 @@ import com.codewithdevflamen.client.model.UserModel;
 import com.codewithdevflamen.client.service.UserService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -31,8 +28,17 @@ public class RegistrationController {
         return "Registration success";
     }
 
+    @GetMapping("/verifyRegistration")
+    public String verifyToken(@RequestParam("token") String token){
+        String result = userService.validate(token);
+        if(result.equalsIgnoreCase("valid")){
+            return "User verified successfully";
+        }
+        return "Bad User";
+    }
+
     private String applicationURL(HttpServletRequest request) {
-        return String.format("http://%s:%s/S%s",
+        return String.format("http://%s:%s/%s",
                 request.getServerName(),
                 request.getServerPort(),
                 request.getContextPath());
