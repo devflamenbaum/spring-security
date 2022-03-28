@@ -1,26 +1,37 @@
 package com.codewithdevflamen.client.service;
 
+import com.codewithdevflamen.client.entity.PasswordResetToken;
 import com.codewithdevflamen.client.entity.User;
 import com.codewithdevflamen.client.entity.VerificationToken;
 import com.codewithdevflamen.client.model.UserModel;
+import com.codewithdevflamen.client.repository.PasswordResetTokenRepository;
 import com.codewithdevflamen.client.repository.UserRepository;
 import com.codewithdevflamen.client.repository.VerificationTokenRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.sql.Date;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UserServiceImpl(UserRepository userRepository,
+                           PasswordResetTokenRepository passwordResetTokenRepository,
                            VerificationTokenRepository verificationTokenRepository,
                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.verificationTokenRepository = verificationTokenRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -71,5 +82,33 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return "valid";
+    }
+
+    @Override
+    public VerificationToken generateNewToken(String token) {
+        VerificationToken verificationToken =
+                verificationTokenRepository.findByToken(token);
+
+        String newToken = UUID.randomUUID().toString();
+
+        verificationToken.setToken(newToken);
+        verificationToken.setExpirationDate(Date.from(LocalDateTime.now().plus(Duration.of(10, ChronoUnit.MINUTES))
+                                                .atZone(ZoneId.systemDefault()).toInstant()));
+
+        verificationTokenRepository.save(verificationToken);
+
+        return verificationToken;
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    @Override
+    public void createPasswordResetTokenForUser(User user, String token) {
+        PasswordResetToken passwordResetToken = new PasswordResetToken(user, token);
+        passwordResetTokenRepository.save(passwordResetToken);
+
     }
 }
